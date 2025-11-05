@@ -1,0 +1,132 @@
+(: Demand Type)
+(: SkipDemand Type)
+; (: demand (-> Symbol Number Demand))
+(: skip (-> Symbol SkipDemand))
+!(bind! &demandspace (new-space))
+; (: addDemand (-> hyperon::space::DynSpace Symbol Number Demand))
+(= (addDemand $space $name $value)
+    (let* (
+            ($demand (demand $name $value))
+            ; ($duplicateDemandList  (match $space (demand $name $v) (demand $name $v)))
+            ($_ (add-atom $space $demand))
+        )
+     ()
+    )
+    )
+
+(= (fetch-demand $space $name)
+    (match $space (demand $name $x) (demand $name $x))
+)
+
+(= (fetch-demand-val $space $name)
+    (let ($x $y $z) (fetch-demand $space $name) $z)
+)
+
+(= (getAllDemands $space)
+    (collapse (match $space (demand $x $_) (demand $x $_)))
+)
+
+
+(= (skipDemand $space $demand) 
+    (let* (
+        ($skip (collapse (match $space (skip $demand) (skip $demand))))
+        ( $isNotFound (== $skip ()))
+    )
+    (if $isNotFound 
+        (add-atom $space (skip $demand)) 
+        ()
+    )
+    )
+)
+
+(= (getEnabledDemands $space)
+    (let* (
+       ( $skippedDemands (collapse (match $space (, (demand $x $_) (skip $x)) (demand $x $_)) ))
+    
+       ( $allDemands (getAllDemands $space))
+    
+       ( $enabledDemands (collapse (subtraction  (superpose $allDemands)  (superpose $skippedDemands))))
+     
+    ) 
+        $enabledDemands
+    )
+)
+
+(= (setDemandValue $space $demandName $newValue)
+    (let* (
+        ((demand $demandName $oldValue ) (match $space (demand $demandName $oldValue) (demand $demandName $oldValue)))
+        ($_ (remove-atom $space (demand $demandName $oldValue)))
+        ($_ (add-atom $space (demand $demandName $newValue)))
+    )
+    ()
+    )
+
+)
+(= (getDemandByName $space $name) (match $space (demand $name $x) (demand $name $x)))
+
+
+(= (demandDecay $space $demand $value)
+    (let* (
+        ($oldValue  (match $space (demand $demand $oldValue) $oldValue))
+        ($newValue (- $oldValue $value))
+    )
+    (if (>= $newValue 0)
+        (setDemandValue $space $demand $newValue)
+        (let* (($demandAtom (match $space (demand $demand $oldValue) (demand $demand $oldValue)))
+                ($_ (remove-atom $space $demandAtom))
+                )
+        (
+            (remove-atom $space (skip $demand))
+        )
+    )
+    )
+))
+
+; New function to apply decay only to skipped demands
+(= (decaySkippedDemands $space $decayValue)
+    (let* (
+        ($skippedDemandNames (collapse (match $space (skip $x) $x)))
+        ($skippedDemands (collapse (match $space (demand $x $value) (demand $x $value))))
+    )
+    (if (== (size-atom $skippedDemands) 0 )
+        (There is no skipped demand) 
+        (demandDecay $space (superpose $skippedDemandNames) $decayValue)
+    ))
+)
+; New function to apply decay to all demands (both enabled and skipped)
+(= (decayAllDemands $space $decayValue)
+    (let* (
+        ($allDemands (getAllDemands $space))
+        ($demandNames (collapse (match $space (demand $x $_) $x)))
+    )
+    (if (== (length $allDemands) 0 )
+        (No demands in the space)
+        (demandDecay $space (superpose $demandNames) $decayValue)
+    ))
+)
+
+; New function to apply different decay rates to enabled vs skipped demands
+(= (decayDemandsWithDifferentRates $space $enabledDecayRate $skippedDecayRate)
+    (let* (
+        ($enabledDemandNames (getEnabledDemands $space))
+        ($enabledDemands (collapse (unify $enabledDemandNames (demand $x $_) $x ())))
+        ($skippedDemandNames (collapse (match $space (skip $x) $x)))
+        ($_ (decaySkippedDemands $space $skippedDecayRate))
+    )
+    (if (== (length $enabledDemands) 0)
+        (There is no skipped demand)
+        (demandDecay $space (superpose $enabledDemands) $enabledDecayRate)
+
+    ))
+)
+
+(= (exists-In $space $item)
+  (let $atoms (collapse (get-atoms $space)) (if (isMember $item $atoms) True False))
+)
+(= (isMember $instance $list)
+  (if (== $list ())
+    False
+    (let ($head $tail) (decons-atom $list) (if (== $head $instance) True (isMember $instance $tail)))
+  )
+)
+
