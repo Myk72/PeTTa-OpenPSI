@@ -1,0 +1,38 @@
+(: Modulator Type)
+(: modulator (-> Symbol Number Modulator))
+
+;(: insert-modulators (-> Atom empty))
+(= (insert-modulators $space) (
+        let $existingModulators (superpose (
+        (modulator arousal 0.5)
+        (modulator positive-valence 0.5)
+        ;;(modulator negative-valence 0.5)
+        (modulator selection-threshold 0.5)
+        (modulator securing-threshold 0.5)
+        (modulator goal-directedness 0.5)
+        (modulator resolution-level 0.5)))
+        (add-atom $space $existingModulators)))
+
+; (: fetch-modulator (-> hyperon::space::DynSpace Symbol Expression))
+(= (fetch-modulator $space $name)
+     (match $space (modulator $name $x) (modulator $name $x))
+)
+
+; (: fetch-modulator-val (-> hyperon::space::DynSpace Symbol Number))
+(= (fetch-modulator-val $space $name)
+    (let ($x $y $z) (fetch-modulator $space $name) $z)
+)
+
+; (: normalize-value (-> Number Number))
+(= (normalize-value $num)
+    (if(and (<= $num 7) (>= $num 1))
+        (/ $num 7.0)
+        (ERROR (provide unique values))
+    )
+)
+
+; (: add-modulator (-> hyperon::space::DynSpace Expression empty))
+(= (add-modulator $space (modulator $name $value))
+    (if (isInBetween $value 0 1) 
+        (add-atom $space (modulator $name $value)) 
+        (ERROR (value is incorrect) BadType)))
