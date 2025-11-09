@@ -22,10 +22,15 @@
 (= (increment $x) (+ $x 1))
 
 
-(: isMember (-> $a $aa Bool))
-
+; (: isMember (-> $a $aa Bool))
 (= (isMember $x $list)
-    (let $netVal (intersection-atom ($x) $list) (not (== $netVal ())))
+    ; (let $netVal (intersection-atom ($x) $list) (not (== $netVal ())))
+    (let* (
+        ($netVal (intersection-atom ($x) $list))
+        ; ($_ (println! ("isMember check: " $x " in " $list " => " $netVal)))
+    )
+    (not (== $netVal ()))
+    )
 )
 ; This function assumes it receives a set1 and set2 expression as parameters.
 ; It then removes similar elements found in set2 that already exist in set1.
@@ -92,8 +97,11 @@
 
 
 ;; Function to replace a given atom from a space.
-(: update-atom (-> Grounded Atom Atom (->)))
-(= (update-atom $space $oatom $natom) (let $_ (remove-atom $space $oatom) (add-atom $space $natom)))
+; (: update-atom (-> Grounded Atom Atom (->)))
+(= (update-atom $space $oatom $natom) 
+    (let $_ (remove-atom $space $oatom)
+        (add-atom $space $natom)
+    ))
 
 ;; Function to replace a given atom from a space.
 (: appendAtom (-> Atom Atom Atom))
