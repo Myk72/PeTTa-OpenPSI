@@ -1,6 +1,3 @@
-!(bind! &testedActions (new-space))
-!(bind! &priorityQueue (new-space))
-
 ;get the goal value and desired goal value
 
 (= (goal-value (Goal $goal $value $dgv) $ruleSpace)
@@ -31,8 +28,8 @@
 (= (aStarPlanner $initialState $goal $testedActions $ruleSpace)
    (let* (
           ($visited (new-space))  
-          (() (add-atom &priorityQueue (0.0 $initialState ()))) ; Initialize with (cost=0.0, initialState, empty plan)
-         )
+          ;(() (add-atom &priorityQueue (0.0 $initialState ()))) ; Initialize with (cost=0.0, initialState, empty plan)
+         ) 
       (aStarLoop &priorityQueue $goal $testedActions $visited $ruleSpace)
    )
 )
@@ -56,7 +53,7 @@
                   ($applicableActions (collapse (match $ruleSpace (: $handle (IMPLICATION_LINK (AND_LINK $_ $action) $g)) $action)))
                   ($untriedActions (filterUntriedRulesList $applicableActions (getTestedActions $state $testedActions) ()))
                   ($newState (applyActions $untriedActions $state () $ruleSpace))
-                  (() (addNewStates $newState $cost $plan $pq $goal $ruleSpace))
+                  ($_ (addNewStates $newState $cost $plan $pq $goal $ruleSpace))
                   )
                   (aStarLoop $pq $goal $testedActions $visited $ruleSpace)
                 )
@@ -80,15 +77,15 @@
             ($stateFull (car-atom $state)) ; $stateFull returns ((Goal found_target 1.0 1.0))
             ($newCost (+ $currentCost (distance $stateFull $goal $ruleSpace))) 
             ($newPlan (cons-atom $action $currentPlan)) 
-            ($qw (add-atom &testedActions ($stateFull $action)))
-            ($wq (add-atom $pq ($newCost $stateFull $newPlan)))
-           )  
-        (addNewStates $tail $currentCost $currentPlan $pq $goal $ruleSpace)   
+            ($_ (add-atom &testedActions ($stateFull $action)))
+            ($_ (add-atom $pq ($newCost $stateFull $newPlan)))
+           ) 
+         (addNewStates $tail $currentCost $currentPlan $pq $goal $ruleSpace)   
  
      )
    )
-
 )
+
 ;pops and returns min-cost entry from pq 
 (= (popMin $pq)
    (let* (
@@ -107,13 +104,12 @@
         $candidates
    )
 )
-;(= (min-atom $a $b) (if (> $a $b) $b $a))
 ;computes minimum cost in pq
 (= (minCost $pq)
    (let* (
           ($match (collapse (match $pq ($cost $state $plan) $cost)))
          )
-      (if (== $match ()) 1000 (min-atom $match))   
+      (if (== $match ()) 1000.0 (min-atom $match))   
    )
 )
 ;applies actions to state, and returns list of (action new-state) pairs
